@@ -264,9 +264,9 @@ const ProductEditor = () => {
                         </div>
                     </div>
 
-                    {/* Pricing & Inventory Card */}
+                    {/* Pricing Card */}
                     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1.5rem' }}>Pricing & Inventory</h3>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1.5rem' }}>Pricing</h3>
 
                         <div style={{ marginBottom: '1.5rem' }}>
                             <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>Price ($)</label>
@@ -278,19 +278,6 @@ const ProductEditor = () => {
                                 required
                                 min="0"
                                 step="0.01"
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
-                            />
-                        </div>
-
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>Stock Quantity</label>
-                            <input
-                                type="number"
-                                name="stock"
-                                value={formData.stock}
-                                onChange={handleChange}
-                                required
-                                min="0"
                                 style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
                             />
                         </div>

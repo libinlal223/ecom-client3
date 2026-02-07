@@ -162,33 +162,37 @@ const Home = () => {
                             <ArrowLeft size={20} />
                         </button>
                         <div className="categories-scroll">
-                            {[
-                                { id: 'power-tools', name: 'Power Tools', image: '/images/categories/drill.png' },
-                                { id: 'power-tools', name: 'Power Tools', image: '/images/categories/grinder.png' },
-                                { id: 'power-tools', name: 'Power Tools', image: '/images/categories/compressor.png' },
-                                { id: 'power-tools', name: 'Power Tools', image: '/images/categories/drill.png' },
-                                { id: 'automotive', name: 'Automotive', image: '/images/categories/grinder.png' },
-                                { id: 'hand-tools', name: 'Hand Tools', image: '/images/categories/compressor.png' },
-                                { id: 'electrical', name: 'Electrical', image: '/images/categories/drill.png' },
-                                { id: 'hand-tools', name: 'Hand Tools', image: '/images/categories/grinder.png' },
-                                { id: 'power-tools', name: 'Power Tools', image: '/images/categories/compressor.png' },
-                                { id: 'electrical', name: 'Electrical', image: '/images/categories/drill.png' },
-                                { id: 'hand-tools', name: 'Hand Tools', image: '/images/categories/grinder.png' },
-                                { id: 'power-tools', name: 'Power Tools', image: '/images/categories/compressor.png' },
-                                { id: 'hand-tools', name: 'Hand Tools', image: '/images/categories/drill.png' },
-                                { id: 'hand-tools', name: 'Hand Tools', image: '/images/categories/grinder.png' },
-                                { id: 'electrical', name: 'Electrical', image: '/images/categories/compressor.png' },
-                            ].map((cat, index) => (
-                                <Link key={`${cat.id}-${index}`} to={`/category/${cat.id}`} className="featured-category-card">
-                                    <div className="cat-image-wrapper">
-                                        <img src={cat.image} alt={cat.name} loading="lazy" />
-                                    </div>
-                                    <div className="cat-info">
-                                        <h3>{cat.name}</h3>
-                                        <p className="explore-link">EXPLORE ALL »</p>
-                                    </div>
-                                </Link>
-                            ))}
+                            {categories.map((cat, index) => {
+                                if (!cat || !cat.name) return null; // Safety check
+                                // Simple image mapping based on Name (slugified)
+                                // Since IDs are now UUIDs, we use name to identify the category for image mapping
+                                const slug = cat.name.toLowerCase().replace(/\s+/g, '-');
+
+                                const getCatImage = (slugName) => {
+                                    switch (slugName) {
+                                        case 'power-tools': return 'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400';
+                                        case 'hand-tools': return 'https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?auto=format&fit=crop&q=80&w=400';
+                                        case 'accessories': return 'https://images.unsplash.com/photo-1588611910603-9e48c15db64b?auto=format&fit=crop&q=80&w=400'; // Batteries
+                                        case 'storage-&-safety': // Handle special char
+                                        case 'storage-safety': return 'https://images.unsplash.com/photo-1594950882798-e7e29aa7cb35?auto=format&fit=crop&q=80&w=400'; // Toolbox
+                                        case 'outdoor-power':
+                                        case 'outdoor-power-equipment': return 'https://images.unsplash.com/photo-1592419044706-39796d40f98c?auto=format&fit=crop&q=80&w=400';
+                                        default: return 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&q=80&w=400';
+                                    }
+                                };
+
+                                return (
+                                    <Link key={cat.id} to={`/category/${cat.id}`} className="featured-category-card">
+                                        <div className="cat-image-wrapper">
+                                            <img src={getCatImage(slug)} alt={cat.name} loading="lazy" />
+                                        </div>
+                                        <div className="cat-info">
+                                            <h3>{cat.name}</h3>
+                                            <p className="explore-link">EXPLORE ALL »</p>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </div>
                         <button
                             className="category-scroll-btn right"

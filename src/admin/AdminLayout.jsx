@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, Navigate, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, Settings, LogOut } from 'lucide-react';
 
 const AdminLayout = () => {
     const token = localStorage.getItem('admin_token');
@@ -17,7 +17,7 @@ const AdminLayout = () => {
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
         { icon: Package, label: 'Products', path: '/admin/products' },
-        { icon: Package, label: 'Categories', path: '/admin/categories' }, // Reusing Package icon for simplicity, or could import List or Layers
+        { icon: Layers, label: 'Categories', path: '/admin/categories' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
     ];
 

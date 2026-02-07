@@ -1,162 +1,298 @@
 
-// Mock Database Service simulating Supabase/PostgreSQL structure
-// This structure is designed to be easily replaced with real Supabase calls later.
+import { createClient } from '@supabase/supabase-js';
 
-// Initial Data Seeding
-const INITIAL_CATEGORIES = [
-    { id: 'power-tools', name: 'Power Tools', created_at: new Date().toISOString() },
-    { id: 'hand-tools', name: 'Hand Tools', created_at: new Date().toISOString() },
-    { id: 'electrical', name: 'Electrical', created_at: new Date().toISOString() },
-    { id: 'automotive', name: 'Automotive', created_at: new Date().toISOString() },
-    { id: 'safety-equipment', name: 'Safety Equipment', created_at: new Date().toISOString() },
-    { id: 'measuring-tools', name: 'Measuring Tools', created_at: new Date().toISOString() },
-    { id: 'fasteners', name: 'Fasteners', created_at: new Date().toISOString() },
-    { id: 'welding-equipment', name: 'Welding Equipment', created_at: new Date().toISOString() },
-    { id: 'pneumatic-tools', name: 'Pneumatic Tools', created_at: new Date().toISOString() },
-    { id: 'storage-solutions', name: 'Storage Solutions', created_at: new Date().toISOString() },
-    { id: 'ladders-scaffolding', name: 'Ladders & Scaffolding', created_at: new Date().toISOString() },
-    { id: 'outdoor-power', name: 'Outdoor Power Equipment', created_at: new Date().toISOString() }
-];
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const INITIAL_SUBCATEGORIES = [
-    { id: 'drills', category_id: 'power-tools', name: 'Drills & Drivers' },
-    { id: 'saws', category_id: 'power-tools', name: 'Saws' },
-    { id: 'hammers', category_id: 'hand-tools', name: 'Hammers' },
-    { id: 'wrenches', category_id: 'hand-tools', name: 'Wrenches' },
-    { id: 'meters', category_id: 'electrical', name: 'Multimeters' },
-    { id: 'sockets', category_id: 'automotive', name: 'Socket Sets' }
-];
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('YOUR_SUPABASE_URL')) {
+    const msg = 'CRITICAL ERROR: Supabase credentials missing or default in .env file. Please update .env with real keys and RESTART SERVER.';
+    console.error(msg);
+    alert(msg);
+    throw new Error(msg);
+}
 
-// Helper to simulate network delay
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-class MockDatabase {
-    constructor() {
-        // Load from localStorage or initialize
-        this.categories = JSON.parse(localStorage.getItem('db_categories')) || INITIAL_CATEGORIES;
-        this.subcategories = JSON.parse(localStorage.getItem('db_subcategories')) || INITIAL_SUBCATEGORIES;
-        this.products = JSON.parse(localStorage.getItem('db_products')) || [];
-
-        // If products are empty, migrate from the flat file (one-time logic)
-        if (this.products.length === 0) {
-            import('../../data/products').then(module => {
-                this.products = module.products.map(p => ({
-                    ...p,
-                    subcategory_id: null, // Default to null for legacy data
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                }));
-                this._save();
-            });
-        }
+// Helper to map Supabase product result to frontend structure
+const mapProduct = (p) => {
+    let features = [];
+    try {
+        features = p.features ? JSON.parse(p.features) : [];
+    } catch (e) {
+        // Fallback if it's just a string
+        features = p.features ? [p.features] : [];
     }
 
-    _save() {
-        localStorage.setItem('db_categories', JSON.stringify(this.categories));
-        localStorage.setItem('db_subcategories', JSON.stringify(this.subcategories));
-        localStorage.setItem('db_products', JSON.stringify(this.products));
+    // Extract category_id from joined sub_category if available
+    const categoryId = p.sub_categories?.category_id || p.category_id;
+
+    return {
+        ...p,
+        id: p.id,
+        category: categoryId, // Mapped for frontend
+        subcategory: p.sub_category_id, // Mapped for frontend
+        features: Array.isArray(features) ? features : [features],
+        images: p.product_images ? p.product_images.map(img => img.image_url) : [],
+        is_featured: p.is_featured, // Pass through
+        sub_category_id: undefined, // Cleanup
+        product_images: undefined,   // Cleanup
+        sub_categories: undefined    // Cleanup
+    };
+};
+
+class SupabaseDatabase {
+    constructor() {
+        console.log('Supabase Database Service Initialized (Schema V2)');
     }
 
     // --- Categories ---
     async getCategories() {
-        await delay(300);
-        return [...this.categories];
+        const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .order('name');
+
+        if (error) {
+            console.error('Error fetching categories:', error);
+            return [];
+        }
+        return data;
     }
 
-    async createCategory(data) {
-        await delay(300);
-        const newCat = {
-            id: data.name.toLowerCase().replace(/\s+/g, '-'),
-            ...data,
-            created_at: new Date().toISOString()
-        };
-        this.categories.push(newCat);
-        this._save();
-        return newCat;
+    async createCategory(catData) {
+        // ID is UUID generated by DB
+        const { data, error } = await supabase
+            .from('categories')
+            .insert([{ name: catData.name }]) // Ignore provided ID, let DB generate
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     }
 
     async deleteCategory(id) {
-        await delay(300);
-        this.categories = this.categories.filter(c => c.id !== id);
-        this._save();
+        const { error } = await supabase
+            .from('categories')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
         return true;
     }
 
     // --- Subcategories ---
     async getSubcategories(categoryId = null) {
-        await delay(300);
+        let query = supabase.from('sub_categories').select('*').order('name');
+
         if (categoryId) {
-            return this.subcategories.filter(s => s.category_id === categoryId);
+            query = query.eq('category_id', categoryId);
         }
-        return [...this.subcategories];
+
+        const { data, error } = await query;
+        if (error) {
+            console.error('Error fetching subcategories:', error);
+            return [];
+        }
+        return data;
+    }
+
+    async createSubcategory(subData) {
+        // Ensure category_id is present
+        const { data, error } = await supabase
+            .from('sub_categories')
+            .insert([{
+                name: subData.name,
+                category_id: subData.category_id || subData.category // Handle both prop names
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    async deleteSubcategory(id) {
+        const { error } = await supabase
+            .from('sub_categories')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+        return true;
     }
 
     // --- Products ---
     async getProducts(page = 1, limit = 20, search = '', filters = {}) {
-        await delay(500);
-        let filtered = [...this.products];
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        // Select products and join images. 
+        // Also join sub_categories to get category_id if needed for mapping or filtering
+        let query = supabase
+            .from('products')
+            .select('*, product_images(image_url), sub_categories(category_id)', { count: 'exact' });
 
         if (search) {
-            const lower = search.toLowerCase();
-            filtered = filtered.filter(p =>
-                p.name.toLowerCase().includes(lower) ||
-                p.id.toLowerCase().includes(lower)
-            );
+            query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
         }
 
         if (filters.category) {
-            filtered = filtered.filter(p => p.category === filters.category);
+            // Filter by category via the sub_category relationship
+            // !inner is required to filter on a joined table
+            query = supabase
+                .from('products')
+                .select('*, product_images(image_url), sub_categories!inner(category_id)', { count: 'exact' })
+                .eq('sub_categories.category_id', filters.category);
         }
 
-        const total = filtered.length;
-        const start = (page - 1) * limit;
-        const data = filtered.slice(start, start + limit);
+        if (filters.subcategory) {
+            query = query.eq('sub_category_id', filters.subcategory);
+        }
 
-        return { data, total, page, limit };
+        const { data, error, count } = await query
+            .range(from, to)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching products:', error);
+            return { data: [], total: 0, page, limit };
+        }
+
+        // Map and return
+        const mappedData = data.map(mapProduct);
+
+        return {
+            data: mappedData,
+            total: count || 0,
+            page,
+            limit
+        };
     }
 
     async getProduct(id) {
-        await delay(300);
-        return this.products.find(p => p.id === id);
+        const { data, error } = await supabase
+            .from('products')
+            .select('*, product_images(image_url), sub_categories(category_id)')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            console.error('Error fetching product:', error);
+            return null;
+        }
+
+        return mapProduct(data);
     }
 
-    async createProduct(data) {
-        await delay(500);
-        const newProd = {
-            ...data,
-            id: `PROD-${Date.now()}`, // Simple ID generation
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+    async createProduct(prodData) {
+        const { images, category, subcategory, features, ...rest } = prodData;
+
+        const productPayload = {
+            ...rest,
+            // products table doesn't have category_id? 
+            // If it does, uncomment: category_id: category,
+            sub_category_id: subcategory, // Map 'subcategory' -> 'sub_category_id'
+            features: JSON.stringify(features || []), // Store as JSON string in text column
+            is_featured: rest.is_featured || false
         };
-        this.products.unshift(newProd);
-        this._save();
-        return newProd;
+
+        // Cleaning up undefineds
+        delete productPayload.id; // Allow DB to generate UUID
+
+        const { data: product, error: prodError } = await supabase
+            .from('products')
+            .insert([productPayload])
+            .select()
+            .single();
+
+        if (prodError) throw prodError;
+
+        if (images && images.length > 0) {
+            const imageInserts = images.map(url => ({
+                product_id: product.id,
+                image_url: url
+            }));
+
+            const { error: imgError } = await supabase
+                .from('product_images')
+                .insert(imageInserts);
+
+            if (imgError) console.error('Error saving images:', imgError);
+        }
+
+        return this.getProduct(product.id);
     }
 
-    async updateProduct(id, data) {
-        await delay(500);
-        const index = this.products.findIndex(p => p.id === id);
-        if (index === -1) throw new Error('Product not found');
+    async updateProduct(id, prodData) {
+        const { images, category, subcategory, features, ...rest } = prodData;
 
-        this.products[index] = { ...this.products[index], ...data, updated_at: new Date().toISOString() };
-        this._save();
-        return this.products[index];
+        const updates = {
+            ...rest,
+            sub_category_id: subcategory,
+            features: JSON.stringify(features || [])
+        };
+        // Remove helper fields
+        delete updates.created_at;
+        delete updates.product_images;
+        delete updates.sub_categories;
+
+        const { error: prodError } = await supabase
+            .from('products')
+            .update(updates)
+            .eq('id', id);
+
+        if (prodError) throw prodError;
+
+        if (images) {
+            await supabase.from('product_images').delete().eq('product_id', id);
+
+            if (images.length > 0) {
+                const imageInserts = images.map(url => ({
+                    product_id: id,
+                    image_url: url
+                }));
+                await supabase.from('product_images').insert(imageInserts);
+            }
+        }
+
+        return this.getProduct(id);
     }
 
     async deleteProduct(id) {
-        await delay(500);
-        this.products = this.products.filter(p => p.id !== id);
-        this._save();
+        // Delete images first (if no cascade)
+        await supabase.from('product_images').delete().eq('product_id', id);
+
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
         return true;
     }
 
-    // --- Images (Simulated Storage) ---
+    // --- Storage ---
     async uploadImage(file) {
-        await delay(1000);
-        // In a real app, this would upload to Supabase Storage and return a URL
-        // Here we mock it by returning a fake URL or object URL if needed locally
-        return URL.createObjectURL(file);
+        const folder = 'product-images';
+        const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+        const filePath = `${fileName}`;
+
+        const { data, error } = await supabase.storage
+            .from(folder)
+            .upload(filePath, file);
+
+        if (error) {
+            console.error('Upload error:', error);
+            throw error;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from(folder)
+            .getPublicUrl(filePath);
+
+        return publicUrl;
     }
 }
 
-export const db = new MockDatabase();
+export const db = new SupabaseDatabase();

@@ -7,6 +7,8 @@ import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-re
 const ProductsList = () => {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [subcategories, setSubcategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
@@ -14,17 +16,23 @@ const ProductsList = () => {
     const limit = 25;
 
     useEffect(() => {
-        loadProducts();
+        loadData();
     }, [page, search]);
 
-    const loadProducts = async () => {
+    const loadData = async () => {
         setLoading(true);
         try {
-            const res = await db.getProducts(page, limit, search);
-            setProducts(res.data);
-            setTotal(res.total);
+            const [prodRes, cats, subs] = await Promise.all([
+                db.getProducts(page, limit, search),
+                db.getCategories(),
+                db.getSubcategories()
+            ]);
+            setProducts(prodRes.data);
+            setTotal(prodRes.total);
+            setCategories(cats);
+            setSubcategories(subs);
         } catch (error) {
-            console.error('Failed to load products', error);
+            console.error('Failed to load data', error);
         } finally {
             setLoading(false);
         }
@@ -34,7 +42,7 @@ const ProductsList = () => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
         try {
             await db.deleteProduct(id);
-            loadProducts();
+            loadData();
         } catch (error) {
             console.error('Failed to delete product', error);
         }
@@ -43,7 +51,7 @@ const ProductsList = () => {
     const handleSearch = (e) => {
         e.preventDefault();
         setPage(1); // Reset to page 1 on search
-        loadProducts();
+        loadData();
     };
 
     const totalPages = Math.ceil(total / limit);
@@ -92,7 +100,6 @@ const ProductsList = () => {
                                     <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Product</th>
                                     <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Category</th>
                                     <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Price</th>
-                                    <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Stock</th>
                                     <th style={{ padding: '0.75rem 1.5rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Actions</th>
                                 </tr>
                             </thead>
@@ -113,20 +120,17 @@ const ProductsList = () => {
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: '#6B7280' }}>
-                                            <span style={{ display: 'inline-block', padding: '0.125rem 0.5rem', borderRadius: '9999px', background: '#F3F4F6', fontSize: '0.75rem' }}>
-                                                {product.category}
+                                            <span style={{ display: 'inline-block', padding: '0.125rem 0.5rem', borderRadius: '4px', background: '#F3F4F6', fontSize: '0.75rem', marginRight: '0.5rem' }}>
+                                                {categories.find(c => c.id === product.category)?.name || product.category}
                                             </span>
+                                            {product.subcategory && (
+                                                <span style={{ display: 'inline-block', padding: '0.125rem 0.5rem', borderRadius: '4px', background: '#EFF6FF', color: '#1D4ED8', fontSize: '0.75rem' }}>
+                                                    {subcategories.find(s => s.id === product.subcategory)?.name || product.subcategory}
+                                                </span>
+                                            )}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: '#111827', fontWeight: '500' }}>
                                             ${product.price}
-                                        </td>
-                                        <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem' }}>
-                                            <span style={{
-                                                color: product.stock < 10 ? '#DC2626' : '#059669',
-                                                fontWeight: '500'
-                                            }}>
-                                                {product.stock} units
-                                            </span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>

@@ -6,7 +6,7 @@ const CategoryManager = () => {
     const [categories, setCategories] = useState([]);
     const [subcategories, setSubcategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({ name: '', created_at: '' });
+    const [formData, setFormData] = useState({ name: '', category_id: '' });
 
     // Simple state to toggle between 'categories' and 'subcategories' view
     const [viewMode, setViewMode] = useState('categories');
@@ -26,15 +26,22 @@ const CategoryManager = () => {
         setLoading(false);
     };
 
-    const handleCreateCategory = async (e) => {
+    const handleCreate = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await db.createCategory(formData);
+            if (viewMode === 'categories') {
+                await db.createCategory({ name: formData.name });
+            } else {
+                await db.createSubcategory({
+                    name: formData.name,
+                    category_id: formData.category_id
+                });
+            }
             await loadData();
-            setFormData({ name: '', created_at: '' });
+            setFormData({ name: '', category_id: '' });
         } catch (error) {
-            console.error('Failed to create category', error);
+            console.error('Failed to create', error);
         } finally {
             setLoading(false);
         }
@@ -44,6 +51,14 @@ const CategoryManager = () => {
         if (!window.confirm('Delete this category? Products in this category will be orphaned.')) return;
         setLoading(true);
         await db.deleteCategory(id);
+        await loadData();
+        setLoading(false);
+    };
+
+    const handleDeleteSubcategory = async (id) => {
+        if (!window.confirm('Delete this subcategory?')) return;
+        setLoading(true);
+        await db.deleteSubcategory(id);
         await loadData();
         setLoading(false);
     };
@@ -78,12 +93,14 @@ const CategoryManager = () => {
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>
                     Create New {viewMode === 'categories' ? 'Category' : 'Sub-Category'}
                 </h3>
-                <form onSubmit={handleCreateCategory} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
+                <form onSubmit={handleCreate} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
                     {viewMode === 'subcategories' && (
                         <div style={{ flex: 1 }}>
                             <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Parent Category</label>
                             <select
                                 style={{ width: '100%', padding: '0.625rem', borderRadius: '0.375rem', border: '1px solid #D1D5DB' }}
+                                value={formData.category_id}
+                                onChange={e => setFormData({ ...formData, category_id: e.target.value })}
                                 required
                             >
                                 <option value="">Select Category</option>
@@ -114,6 +131,9 @@ const CategoryManager = () => {
                     <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
                         <tr>
                             <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Name</th>
+                            {viewMode === 'subcategories' && (
+                                <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Parent Category</th>
+                            )}
                             <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>ID / Slug</th>
                             <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Created At</th>
                             <th style={{ padding: '0.75rem 1.5rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: '600', color: '#6B7280', textTransform: 'uppercase' }}>Actions</th>
@@ -123,11 +143,16 @@ const CategoryManager = () => {
                         {(viewMode === 'categories' ? categories : subcategories).map(item => (
                             <tr key={item.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
                                 <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{item.name}</td>
+                                {viewMode === 'subcategories' && (
+                                    <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: '#6B7280' }}>
+                                        {categories.find(c => c.id === item.category_id)?.name || item.category_id}
+                                    </td>
+                                )}
                                 <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: '#6B7280', fontFamily: 'monospace' }}>{item.id}</td>
                                 <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: '#6B7280' }}>{new Date(item.created_at).toLocaleDateString()}</td>
                                 <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                                     <button
-                                        onClick={() => handleDeleteCategory(item.id)}
+                                        onClick={() => viewMode === 'categories' ? handleDeleteCategory(item.id) : handleDeleteSubcategory(item.id)}
                                         style={{ color: '#EF4444', fontWeight: '500', fontSize: '0.875rem', background: 'none', border: 'none', cursor: 'pointer' }}
                                     >
                                         Delete

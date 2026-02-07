@@ -19,5 +19,9 @@ export const productService = {
 
     getProductById: async (id) => {
         return await db.getProduct(id);
+    },
+
+    getSubcategories: async (categoryId) => {
+        return await db.getSubcategories(categoryId);
     }
 };
