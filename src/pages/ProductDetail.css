@@ -1,0 +1,193 @@
+.product-detail-page {
+    padding-top: 100px;
+    padding-bottom: 6rem;
+    min-height: 100vh;
+    background: #fff;
+}
+
+.breadcrumb {
+    font-size: 0.875rem;
+    color: var(--apple-gray-medium);
+    margin-bottom: 2rem;
+}
+
+.breadcrumb a {
+    color: var(--apple-blue);
+    text-decoration: none;
+    margin: 0 0.5rem;
+}
+
+.breadcrumb a:first-child {
+    margin-left: 0;
+}
+
+.breadcrumb span {
+    margin-left: 0.5rem;
+    color: var(--apple-gray);
+}
+
+.product-view {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 4rem;
+    align-items: start;
+}
+
+/* Gallery */
+.product-gallery {
+    position: sticky;
+    top: 120px;
+}
+
+.main-image {
+    width: 100%;
+    aspect-ratio: 1;
+    background: var(--apple-gray-light);
+    border-radius: 0;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 2rem;
+}
+
+.thumbnail-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+}
+
+.thumbnail {
+    aspect-ratio: 1;
+    background: var(--apple-gray-light);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.thumbnail.active {
+    border-color: var(--apple-blue);
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 0.5rem;
+}
+
+/* Info Panel */
+.product-info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.info-header .stock-status {
+    color: #bf4800;
+    /* Apple's specialized text color for status */
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.info-header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--apple-gray);
+    margin-bottom: 1rem;
+    letter-spacing: -0.015em;
+}
+
+.info-header .price {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--apple-gray-medium);
+}
+
+.info-description h3,
+.info-features h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--apple-gray);
+    margin-bottom: 1rem;
+}
+
+.info-description p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--apple-gray-medium);
+}
+
+.info-features ul {
+    list-style: none;
+    padding: 0;
+}
+
+.info-features li {
+    font-size: 1rem;
+    color: var(--apple-gray-medium);
+    margin-bottom: 0.75rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.info-features li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--apple-blue);
+    font-weight: bold;
+}
+
+.purchase-actions {
+    padding-top: 2rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.buy-btn {
+    width: 100%;
+    padding: 1.25rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.disclaimer {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: center;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+    .product-view {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+
+    .product-gallery {
+        position: static;
+    }
+
+    .info-header h1 {
+        font-size: 2.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .product-detail-page {
+        padding-top: 80px;
+    }
+
+    .info-header h1 {
+        font-size: 1.75rem;
+    }
+}

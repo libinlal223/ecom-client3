@@ -1,0 +1,78 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    line-height: 1.47059;
+    font-weight: 400;
+
+    /* Yellow, Black & White Theme */
+    --primary-yellow: #FFC107;
+    --primary-yellow-dark: #FFA000;
+    --primary-yellow-light: #FFECB3;
+    --primary-black: #1a1a1a;
+    --primary-black-light: #2d2d2d;
+    --primary-white: #ffffff;
+    --gray-light: #f5f5f5;
+    --gray-medium: #757575;
+    --border-color: #e0e0e0;
+
+    color-scheme: light;
+    color: #1a1a1a;
+    background-color: #ffffff;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+}
+
+
+h1 {
+    font-size: 3.2em;
+    line-height: 1.1;
+    font-weight: 600;
+}
+
+button {
+    border-radius: 0;
+    border: none;
+    padding: 0.65em 1.5em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: var(--primary-yellow);
+    color: var(--primary-black);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: var(--primary-yellow-dark);
+}
+
+button:focus,
+button:focus-visible {
+    outline: 4px auto var(--primary-yellow);
+}
+
+a {
+    font-weight: 400;
+    color: var(--primary-black);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary-yellow-dark);
+}
+
+/* Apple-style light theme is default */
