@@ -78,7 +78,7 @@ const Home = () => {
                         <div className="container slide-content layout-right">
                             <div className="hero-text">
                                 <span className="slide-number">01</span>
-                                <h1>TOOLS  &<br />MACHINES</h1>
+                                <h1>TOOLS AND<br />MACHINERIES</h1>
                                 <p>20V MAX* LITHIUM ION BRUSHLESS</p>
                             </div>
                             <div className="hero-image">
