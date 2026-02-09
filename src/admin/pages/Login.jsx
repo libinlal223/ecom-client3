@@ -11,11 +11,14 @@ const Login = () => {
     const handleLogin = (e) => {
         e.preventDefault();
         // Mock Authentication
-        if (email === 'admin@suntric.com' && password === 'admin') {
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@intellex.com';
+        const adminPass = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
+
+        if (email === adminEmail && password === adminPass) {
             localStorage.setItem('admin_token', 'mock_token_123');
             navigate('/admin/dashboard');
         } else {
-            alert('Invalid credentials (try admin@suntric.com / admin)');
+            alert('Invalid credentials');
         }
     };
 
