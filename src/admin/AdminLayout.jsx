@@ -27,12 +27,12 @@ const AdminLayout = () => {
             <aside style={{
                 width: '260px',
                 background: 'white',
-                borderRight: '1px solid var(--color-border)',
+                borderRight: '1px solid #e0e0e0',
                 padding: '1.5rem',
                 display: 'flex',
                 flexDirection: 'column'
             }}>
-                <div style={{ marginBottom: '2rem', fontWeight: '800', fontSize: '1.25rem', letterSpacing: '-0.03em' }}>
+                <div style={{ marginBottom: '2rem', fontWeight: '800', fontSize: '1.25rem', letterSpacing: '-0.03em', color: '#1a1a1a' }}>
                     Suntric Admin
                 </div>
 
@@ -47,9 +47,11 @@ const AdminLayout = () => {
                                 gap: '0.75rem',
                                 padding: '0.75rem 1rem',
                                 borderRadius: '0.5rem',
-                                color: location.pathname === item.path ? 'white' : 'var(--color-text-muted)',
-                                background: location.pathname === item.path ? 'var(--color-primary)' : 'transparent',
-                                fontWeight: '500'
+                                color: location.pathname === item.path ? '#ffffff' : '#757575',
+                                background: location.pathname === item.path ? '#FFC107' : 'transparent',
+                                fontWeight: '500',
+                                textDecoration: 'none',
+                                transition: 'all 0.2s ease'
                             }}
                         >
                             <item.icon size={20} />
@@ -65,8 +67,14 @@ const AdminLayout = () => {
                         alignItems: 'center',
                         gap: '0.75rem',
                         padding: '0.75rem 1rem',
-                        color: 'var(--color-text-muted)',
-                        marginTop: 'auto'
+                        color: '#757575',
+                        marginTop: 'auto',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontWeight: '500',
+                        transition: 'color 0.2s ease'
                     }}
                 >
                     <LogOut size={20} />

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../services/mockDb';
-import { ArrowLeft, Upload, Plus, X } from 'lucide-react';
+import { ArrowLeft, Upload, Plus, X, Minus } from 'lucide-react';
 
 const ProductEditor = () => {
     const { id } = useParams();
@@ -102,6 +102,13 @@ const ProductEditor = () => {
         }
     };
 
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+        }
+    };
+
     if (loading) return <div className="p-8 text-center">Loading editor...</div>;
 
     return (
@@ -118,7 +125,11 @@ const ProductEditor = () => {
                 </h1>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+            <form
+                onSubmit={handleSubmit}
+                onKeyDown={handleKeyDown}
+                style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}
+            >
 
                 {/* Main Content Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -217,9 +228,25 @@ const ProductEditor = () => {
                                             const newImages = formData.images.filter((_, i) => i !== index);
                                             setFormData(prev => ({ ...prev, images: newImages }));
                                         }}
-                                        style={{ position: 'absolute', top: '0.25rem', right: '0.25rem', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '5px',
+                                            right: '5px',
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '50%',
+                                            width: '20px',
+                                            height: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            padding: 0,
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                        }}
                                     >
-                                        <X size={14} />
+                                        <Minus size={14} strokeWidth={3} />
                                     </button>
                                 </div>
                             ))}
@@ -282,16 +309,7 @@ const ProductEditor = () => {
                             />
                         </div>
 
-                        <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>SKU (Optional)</label>
-                            <input
-                                type="text"
-                                name="sku"
-                                value={formData.sku}
-                                onChange={handleChange}
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #d1d5db' }}
-                            />
-                        </div>
+
                     </div>
 
                     <button
