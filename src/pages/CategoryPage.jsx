@@ -1,33 +1,70 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
+import { supabase } from '../admin/services/mockDb';
 import ProductCard from '../components/ui/ProductCard';
 import './CategoryPage.css';
+import { ChevronDown, AlignJustify, LayoutGrid, Grid3x3, Grid, List, ArrowLeft } from 'lucide-react';
+import defaultCatImg from '../assets/img.png';
+import prd1 from '../assets/prd1.png';
+import prd2 from '../assets/prd2.png';
+import prd3 from '../assets/prd3.png';
+import prd4 from '../assets/prd4.png';
+
+// Cloudinary Image Optimization Helper
+export function getOptimizedImage(url, options = {}) {
+    if (!url || typeof url !== 'string') return url;
+    if (!url.includes('/upload/')) return url;
+    const parts = url.split('/upload/');
+    const width = options.width ? `w_${options.width},` : '';
+    const transform = `${width}c_fill,f_auto,q_auto`;
+    return `${parts[0]}/upload/${transform}/${parts[1]}`;
+}
 
 // Helper for subcategory images
 const getSubcategoryImage = (index) => {
-    const images = [
-        'https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400', // Drill
-        'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400', // Factory tools
-        'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?auto=format&fit=crop&q=80&w=400', // Hammer
-        'https://images.unsplash.com/photo-1572981779307-38b8cabb2407?auto=format&fit=crop&q=80&w=400', // Measuring
-        'https://images.unsplash.com/photo-1588611910603-9e48c15db64b?auto=format&fit=crop&q=80&w=400', // Battery
-        'https://images.unsplash.com/photo-1594950882798-e7e29aa7cb35?auto=format&fit=crop&q=80&w=400', // Storage
-    ];
-    return images[index % images.length];
+    const images = [prd1, prd2, prd3, prd4];
+    return images[Math.abs(index) % images.length];
 };
 
 
 const CategoryPage = () => {
     const { categoryId, subcategoryId } = useParams();
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [allProducts, setAllProducts] = useState([]); // Store all products
     const [category, setCategory] = useState(null);
     const [subcategories, setSubcategories] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 20;
+    const [totalCount, setTotalCount] = useState(0);
+
+    const fetchProducts = async (pageToFetch) => {
+        setLoading(true);
+
+        const productImages = [prd1, prd2, prd3, prd4];
+
+        // Dummy Data implementation
+        setTimeout(() => {
+            const dummyProducts = Array.from({ length: pageSize }).map((_, i) => ({
+                id: `dummy-${pageToFetch}-${i}`,
+                name: `Professional Tool ${i + 1 + ((pageToFetch - 1) * pageSize)}`,
+                price: (Math.random() * 200 + 50).toFixed(2),
+                category: categoryId,
+                images: [productImages[i % productImages.length]],
+                is_featured: Math.random() > 0.8
+            }));
+
+            setProducts(dummyProducts);
+            setTotalCount(120); // Dummy total count
+            setCurrentPage(pageToFetch);
+            setLoading(false);
+        }, 500);
+    };
 
     useEffect(() => {
         const init = async () => {
@@ -35,142 +72,137 @@ const CategoryPage = () => {
             window.scrollTo(0, 0);
 
             setLoading(true);
-            try {
-                // Fetch basic data
-                const [cats, subs] = await Promise.all([
-                    productService.getCategories(),
-                    productService.getSubcategories(categoryId)
-                ]);
+            const dummyCategories = [
+                { id: 'protective-equipments', name: 'Protective Equipments' },
+                { id: 'industrial-storage', name: 'Industrial Storage' },
+                { id: 'spill-control', name: 'Spill Control Solutions' },
+                { id: 'road-safety', name: 'Road Safety & Signage' },
+                { id: 'lifting', name: 'Lifting Equipments' },
+                { id: 'measurement', name: 'Precision Measurement Tools' },
+                { id: 'surface-protection', name: 'Surface & Dust Protection Materials' },
+                { id: 'fire-extinguishers', name: 'Fire Extinguishers' },
+                { id: 'wd40', name: 'WD-40 Products' },
+                { id: 'adhesives', name: 'Adhesives & Sealants' },
+                { id: 'tapes', name: 'Tapes & Surface Protection' },
+                { id: 'packaging', name: 'Packaging Tools & Accessories' },
+                { id: 'hand-tools', name: 'Hand Tools' },
+                { id: 'power-tools', name: 'Power Tools' },
+            ];
 
-                const cat = cats.find(c => c.id === categoryId);
-                setCategory(cat);
-                setSubcategories(subs);
+            const cat = dummyCategories.find(c => c.id === categoryId) || { id: categoryId, name: categoryId.replace(/-/g, ' ') };
+            setCategory(cat); // RESTORED state setter
 
-                // Fetch products
-                const res = await productService.getAllProducts(1, 20, categoryId);
-                setAllProducts(res.data);
+            // Dummy Subcategories to show in UI
+            const dummySubcategories = [
+                { id: 'cutting', name: 'Cutting (Metal)' },
+                { id: 'grinding', name: 'Grinding' },
+                { id: 'cordless', name: 'Cordless Power Tools' },
+                { id: 'drilling', name: 'Drilling & Fastening' },
+                { id: 'heat-gun', name: 'Heat Gun' },
+                { id: 'multi-tool', name: 'Multi Tool' },
+                { id: 'shears', name: 'Shears' },
+            ];
 
-                // Filter by subcategory if subcategoryId exists
-                if (subcategoryId) {
-                    const subcategoryName = subcategoryId.replace(/-/g, ' ');
-                    // Simple filter matching
-                    const filtered = res.data.filter(product =>
-                        product.subcategory === subcategoryId || // Exact match (best)
-                        product.name.toLowerCase().includes(subcategoryName.toLowerCase().split(' ')[0]) || // Fallback name match
-                        (product.subcategory && product.subcategory.toLowerCase().includes(subcategoryName.toLowerCase())) // Fallback partial subcategory
-                    );
-                    setProducts(filtered.length > 0 ? filtered : []);
-                } else {
-                    setProducts(res.data);
-                }
+            setSubcategories(dummySubcategories);
 
-                setHasMore(res.hasMore);
-                setPage(1);
-            } catch (error) {
-                console.error("Error loading category data:", error);
-            } finally {
-                setLoading(false);
-            }
+            // Fetch optimized paginated products
+            fetchProducts(1);
         };
         init();
     }, [categoryId, subcategoryId]);
-
-    const loadMore = async () => {
-        if (loading) return;
-        setLoading(true);
-        const nextPage = page + 1;
-        const res = await productService.getAllProducts(nextPage, 20, categoryId);
-        setProducts(prev => [...prev, ...res.data]);
-        setPage(nextPage);
-        setHasMore(res.hasMore);
-        setLoading(false);
-    };
 
     if (!category && !loading) {
         return <div className="loading-page">Category not found</div>;
     }
 
-    if (loading && page === 1) {
+    if (loading && currentPage === 1 && products.length === 0) {
         return <div className="loading-page">Loading...</div>;
     }
 
     return (
         <div className="category-page">
             {/* Category Header */}
-            <section className="category-hero">
+            <section className="category-hero-modern">
                 <div className="container">
-                    {subcategoryId ? (
-                        <>
-                            <Link to={`/category/${categoryId}`} className="back-link">← Back to {category?.name}</Link>
-                            <h1>{subcategoryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h1>
-                            <p>Browse our selection of {subcategoryId.replace(/-/g, ' ')}</p>
-                        </>
-                    ) : (
-                        <>
-                            <Link to="/" className="back-link">← Back to Home</Link>
-                            <h1>{category?.name}</h1>
-                            <p>Explore our complete range of {category?.name?.toLowerCase()}</p>
-                        </>
-                    )}
+                    <button onClick={() => navigate(-1)} className="back-link" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: '0.9rem', display: 'flex', alignItems: 'center', marginBottom: '1rem', color: '#4b5563' }}>
+                        <ArrowLeft size={16} style={{ marginRight: '4px' }} /> Back
+                    </button>
+                    <h1 className="category-title">
+                        {subcategoryId ? subcategoryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : category?.name}
+                    </h1>
                 </div>
             </section>
 
-            {/* Subcategories Section - Only show on main category page */}
-            {!subcategoryId && subcategories.length > 0 && (
-                <section className="subcategories-section">
-                    <div className="container">
-                        <div className="subcategories-grid">
+            <div className="container category-layout-modern">
+                {/* Sidebar for Subcategories */}
+                {!subcategoryId && subcategories.length > 0 && (
+                    <aside className="category-sidebar">
+                        <ul className="sidebar-subcat-list">
                             {subcategories.map((subcat, index) => (
-                                <Link
-                                    key={subcat.id || index}
-                                    to={`/category/${categoryId}/${subcat.id}`}
-                                    className="subcategory-card"
-                                >
-                                    <div className="subcat-image-wrapper">
-                                        <img src={getSubcategoryImage(index)} alt={subcat.name} loading="lazy" />
-                                    </div>
-                                    <div className="subcat-info">
-                                        <h3>{subcat.name}</h3>
-                                    </div>
-                                </Link>
+                                <li key={subcat.id || index}>
+                                    <Link
+                                        to={`/category/${categoryId}/${subcat.id}`}
+                                        className="sidebar-subcat-link"
+                                    >
+                                        {subcat.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </aside>
+                )}
+
+                {/* Main Content Area */}
+                <main className="category-main-content">
+                    {/* Products Grid */}
+                    <section className="category-products">
+                        <div className={`products-grid ${!subcategoryId && subcategories.length > 0 ? 'grid-3-col' : 'grid-4-col'}`}>
+                            {products.map(product => (
+                                <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
-                    </div>
-                </section>
-            )}
 
-            {/* Products Grid */}
-            <section className="category-products">
-                <div className="container">
-                    <div className="products-grid">
-                        {products.map(product => (
-                            <ProductCard key={product.id} product={product} />
-                        ))}
-                    </div>
+                        {loading && <div className="loader">Loading products...</div>}
 
-                    {loading && <div className="loader">Loading more products...</div>}
+                        {/* Pagination UI Block */}
+                        {!loading && totalCount > pageSize && (
+                            <div className="pagination-block" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => {
+                                        window.scrollTo(0, 0);
+                                        fetchProducts(currentPage - 1);
+                                    }}
+                                    disabled={currentPage === 1}
+                                    style={{ opacity: currentPage === 1 ? 0.5 : 1, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                                >
+                                    Previous
+                                </button>
 
-                    {!loading && hasMore && (
-                        <div className="load-more-container">
-                            <button onClick={loadMore} className="btn btn-primary">
-                                Load More Products
-                            </button>
-                        </div>
-                    )}
+                                <span>Page {currentPage} of {Math.ceil(totalCount / pageSize)}</span>
 
-                    {!loading && !hasMore && products.length > 0 && (
-                        <div className="end-message">
-                            You've viewed all products in this category
-                        </div>
-                    )}
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => {
+                                        window.scrollTo(0, 0);
+                                        fetchProducts(currentPage + 1);
+                                    }}
+                                    disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                                    style={{ opacity: currentPage >= Math.ceil(totalCount / pageSize) ? 0.5 : 1, cursor: currentPage >= Math.ceil(totalCount / pageSize) ? 'not-allowed' : 'pointer' }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
 
-                    {!loading && products.length === 0 && (
-                        <div className="end-message">
-                            No products found in this category yet.
-                        </div>
-                    )}
-                </div>
-            </section>
+                        {!loading && products.length === 0 && (
+                            <div className="end-message">
+                                No products found in this category yet.
+                            </div>
+                        )}
+                    </section>
+                </main>
+            </div>
         </div>
     );
 };

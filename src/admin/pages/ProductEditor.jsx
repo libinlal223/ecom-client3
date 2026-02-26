@@ -12,6 +12,12 @@ const ProductEditor = () => {
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState([]);
     const [subcategories, setSubcategories] = useState([]);
+    const [uploadProgress, setUploadProgress] = useState({});
+
+    // We will track raw File objects here before uploading to Cloudinary
+    const [stagedFiles, setStagedFiles] = useState([]);
+    // We will generate local preview URLs here so the user can see what they selected
+    const [previewUrls, setPreviewUrls] = useState([]);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -20,6 +26,8 @@ const ProductEditor = () => {
         price: '',
         description: '',
         features: [''],
+        // This will hold existing Cloudinary URLs (from edit mode) 
+        // OR newly generated Cloudinary URLs (after clicking Create Product)
         images: [],
         stock: 0,
         sku: ''
@@ -75,30 +83,83 @@ const ProductEditor = () => {
         setFormData(prev => ({ ...prev, features: newFeatures }));
     };
 
-    const handleImageUpload = async (e) => {
+    const handleImageUpload = (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
-        // Mock upload process
-        const newImages = await Promise.all(files.map(file => db.uploadImage(file)));
-        setFormData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
+        // Store the raw File objects for later uploading
+        setStagedFiles(prev => [...prev, ...files]);
+
+        // Create fast local browser previews
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setPreviewUrls(prev => [...prev, ...newPreviews]);
+
+        // Clear the file input so the same file could be selected again if needed
+        e.target.value = '';
+    };
+
+    const removeStagedFile = (index) => {
+        setStagedFiles(prev => prev.filter((_, i) => i !== index));
+        // Revoke the object URL to avoid memory leaks
+        URL.revokeObjectURL(previewUrls[index]);
+        setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeExistingImage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         try {
-            if (isEditing) {
-                await db.updateProduct(id, formData);
-            } else {
-                await db.createProduct(formData);
+            // Step 1: Upload any newly staged files to Cloudinary FIRST
+            let newUploadedUrls = [];
+            if (stagedFiles.length > 0) {
+                newUploadedUrls = await Promise.all(
+                    stagedFiles.map(file => {
+                        return db.uploadImage(file, (progress) => {
+                            setUploadProgress(prev => ({
+                                ...prev,
+                                [file.name]: progress
+                            }));
+                        });
+                    })
+                );
             }
+
+            // Clean up object URLs to prevent memory leaks
+            previewUrls.forEach(url => URL.revokeObjectURL(url));
+
+            // Merge old images with new Cloudinary URLs
+            const finalFormData = {
+                ...formData,
+                images: [...formData.images, ...newUploadedUrls]
+            };
+
+            // Step 2: Save metadata to Supabase
+            if (isEditing) {
+                await db.updateProduct(id, finalFormData);
+            } else {
+                await db.createProduct(finalFormData);
+            }
+
+            // Sync local state to be strictly Cloudinary URLs just in case UI needs it before navigation
+            setFormData(finalFormData);
+
             navigate('/admin/products');
         } catch (error) {
             console.error('Failed to save product', error);
-            alert('Error saving product');
+            alert(`Error saving product: ${error.message}`);
         } finally {
             setLoading(false);
+            setUploadProgress({});
+            // Reset blob previews & files safely regardless of success/fail
+            setPreviewUrls([]);
+            setStagedFiles([]);
         }
     };
 
@@ -218,16 +279,62 @@ const ProductEditor = () => {
                             </label>
                         </div>
 
+                        {/* Progress Bars for Uploading Images during submit */}
+                        {Object.keys(uploadProgress).length > 0 && (
+                            <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <h4 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#4b5563' }}>Uploading to media server...</h4>
+                                {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                                    <div key={fileName} style={{ background: '#f9fafb', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e5e7eb' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem' }}>
+                                            <span style={{ fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fileName}</span>
+                                            <span>{progress}%</span>
+                                        </div>
+                                        <div style={{ width: '100%', height: '8px', background: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${progress}%`, height: '100%', background: '#3b82f6', transition: 'width 0.2s ease' }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '1rem' }}>
+                            {/* Render already uploaded images (from edit mode) */}
                             {formData.images.map((url, index) => (
-                                <div key={index} style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
-                                    <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div key={`existing-${index}`} style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                                    <img src={url} alt="Existing product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            const newImages = formData.images.filter((_, i) => i !== index);
-                                            setFormData(prev => ({ ...prev, images: newImages }));
+                                        onClick={() => removeExistingImage(index)}
+                                        style={{
+                                            position: 'absolute',
+                                            top: '5px',
+                                            right: '5px',
+                                            background: '#ef4444',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '50%',
+                                            width: '20px',
+                                            height: '20px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            padding: 0,
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
                                         }}
+                                    >
+                                        <Minus size={14} strokeWidth={3} />
+                                    </button>
+                                </div>
+                            ))}
+
+                            {/* Render local preview images (staged for upload) */}
+                            {previewUrls.map((url, index) => (
+                                <div key={`preview-${index}`} style={{ position: 'relative', aspectRatio: '1', borderRadius: '0.5rem', overflow: 'hidden', border: '2px solid #3b82f6' }}>
+                                    <img src={url} alt="Staged preview" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeStagedFile(index)}
                                         style={{
                                             position: 'absolute',
                                             top: '5px',

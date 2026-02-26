@@ -1,37 +1,41 @@
 import React from 'react';
 import './ProductCard.css';
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+
+export function getOptimizedImage(url, options = {}) {
+    if (!url || typeof url !== 'string') return url;
+    if (!url.includes('/upload/')) return url;
+    const parts = url.split('/upload/');
+    const width = options.width ? `w_${options.width},` : '';
+    const transform = `${width}c_fill,f_auto,q_auto`;
+    return `${parts[0]}/upload/${transform}/${parts[1]}`;
+}
 
 const ProductCard = ({ product }) => {
-    const isFeatured = product.featured || Math.random() > 0.7; // Random featured status
-
-    const handleAddToCart = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // Add to cart logic here
-        console.log('Added to cart:', product.name);
-    };
+    const hasImage = product.images && product.images.length > 0 && product.images[0];
+    const optimizedImageUrl = hasImage ? getOptimizedImage(product.images[0], { width: 400 }) : '';
 
     return (
-        <div className="product-card">
-            <Link to={`/product/${product.id}`} className="product-card-link">
-                <div className="product-image-wrapper">
-                    {isFeatured && <span className="product-badge">Featured</span>}
-                    <img src={product.images[0]} alt={product.name} loading="lazy" />
+        <Link to={`/product/${product.id}`} className="product-card">
+            <div className="pc-image-wrap">
+                {hasImage
+                    ? <img
+                        src={optimizedImageUrl}
+                        alt={product.name}
+                        loading="lazy"
+                        decoding="async"
+                        fetchpriority="low"
+                    />
+                    : <div className="pc-no-image">No Image</div>
+                }
+            </div>
+            <div className="pc-info">
+                <h3 className="pc-name">{product.name}</h3>
+                <div className="pc-price">
+                    <span>${Number(product.price).toFixed(2)}</span>
                 </div>
-                <div className="product-info">
-                    <h3 className="product-name">{product.name}</h3>
-                    <div className="product-pricing">
-                        <span className="current-price">${product.price}</span>
-                    </div>
-                </div>
-            </Link>
-            <button className="add-to-cart-btn" onClick={handleAddToCart}>
-                <ShoppingCart size={18} />
-                ADD TO CART
-            </button>
-        </div>
+            </div>
+        </Link>
     );
 };
 

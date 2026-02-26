@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -5,24 +7,33 @@
 }
 
 :root {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-    line-height: 1.47059;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
     font-weight: 400;
 
-    /* Yellow, Black & White Theme */
-    --primary-yellow: #FFC107;
-    --primary-yellow-dark: #FFA000;
-    --primary-yellow-light: #FFECB3;
-    --primary-black: #1a1a1a;
-    --primary-black-light: #2d2d2d;
-    --primary-white: #ffffff;
-    --gray-light: #f5f5f5;
-    --gray-medium: #757575;
-    --border-color: #e0e0e0;
+    /* Shy Blue Theme */
+    --accent: #4A90D9;
+    --accent-dark: #2E6DB5;
+    --accent-light: #D6E8F7;
+    --accent-xlight: #EEF5FC;
 
-    color-scheme: light;
-    color: #1a1a1a;
-    background-color: #ffffff;
+    --text-dark: #1A2332;
+    --text-med: #4B5567;
+    --text-light: #8A96A3;
+
+    --bg-white: #FFFFFF;
+    --bg-light: #F4F7FA;
+    --bg-section: #F0F4F8;
+
+    --border: #DDE4ED;
+    --border-dark: #C4CDD8;
+
+    --shadow-sm: 0 1px 3px rgba(74, 144, 217, 0.08);
+    --shadow-md: 0 4px 16px rgba(74, 144, 217, 0.12);
+    --shadow-lg: 0 8px 32px rgba(74, 144, 217, 0.18);
+
+    color: var(--text-dark);
+    background-color: var(--bg-white);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -34,45 +45,166 @@ body {
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
+    background: #ffffff;
 }
 
-
-h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
-    font-weight: 600;
-}
-
-button {
-    border-radius: 0;
-    border: none;
-    padding: 0.65em 1.5em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: var(--primary-yellow);
-    color: var(--primary-black);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-button:hover {
-    background-color: var(--primary-yellow-dark);
-}
-
-button:focus,
-button:focus-visible {
-    outline: 4px auto var(--primary-yellow);
+img {
+    max-width: 100%;
+    display: block;
 }
 
 a {
-    font-weight: 400;
-    color: var(--primary-black);
     text-decoration: none;
+    color: var(--text-dark);
+    transition: color 0.2s;
 }
 
 a:hover {
-    color: var(--primary-yellow-dark);
+    color: var(--accent);
 }
 
-/* Apple-style light theme is default */
+h1,
+h2,
+h3,
+h4 {
+    line-height: 1.25;
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+/* ── Shared Utilities ───────────────────────────────────── */
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+}
+
+/* ── Buttons ────────────────────────────────────────────── */
+button {
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--accent-dark);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+}
+
+.btn-outline:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* ── Section Titles ─────────────────────────────────────── */
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-title::before {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 1.25em;
+    background: var(--accent);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* ── Badge ──────────────────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.badge-blue {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+}
+
+.badge-sale {
+    background: #FEE2E2;
+    color: #B91C1C;
+}
+
+.badge-new {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+/* ── Loading Pages ──────────────────────────────────────── */
+.loading-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    font-size: 1.1rem;
+    color: var(--text-light);
+}
+
+/* ── Spinner ────────────────────────────────────────────── */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--accent-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+}

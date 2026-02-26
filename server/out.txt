@@ -1,0 +1,6 @@
+--- Environment Variable Check ---
+Looking for .env file at: C:\Users\Libin\intellex\client3.1\server\.env
+CLOUDINARY_CLOUD_NAME: ✅ SET (dpylyhlml)
+CLOUDINARY_API_KEY: ✅ SET (Hidden)
+CLOUDINARY_API_SECRET: ✅ SET (Hidden)
+----------------------------------

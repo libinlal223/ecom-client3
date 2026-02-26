@@ -186,7 +186,9 @@ class SupabaseDatabase {
     }
 
     async createProduct(prodData) {
+        console.log('[createProduct] Incoming prodData before destructuring:', JSON.stringify(prodData, null, 2));
         const { images, category, subcategory, features, ...rest } = prodData;
+        console.log('[createProduct] Extracted images array:', images);
 
         const productPayload = {
             ...rest,
@@ -209,10 +211,24 @@ class SupabaseDatabase {
         if (prodError) throw prodError;
 
         if (images && images.length > 0) {
-            const imageInserts = images.map(url => ({
-                product_id: product.id,
-                image_url: url
-            }));
+            const imageInserts = images.map(img => {
+                // Handle both objects (new uploads) and strings (existing urls during edits/sync)
+                if (typeof img === 'object' && img !== null) {
+                    return {
+                        product_id: product.id,
+                        image_url: img.secure_url,
+                        public_id: img.public_id
+                    };
+                } else {
+                    return {
+                        product_id: product.id,
+                        image_url: img,
+                        public_id: null // Fallback if no public ID exists for legacy data
+                    };
+                }
+            });
+
+            console.log('[createProduct] Preparing to insert into product_images table:', JSON.stringify(imageInserts, null, 2));
 
             const { error: imgError } = await supabase
                 .from('product_images')
@@ -272,26 +288,54 @@ class SupabaseDatabase {
         return true;
     }
 
-    // --- Storage ---
-    async uploadImage(file) {
-        const folder = 'product-images';
-        const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-        const filePath = `${fileName}`;
+    // --- Storage (via Cloudinary backend) ---
+    async uploadImage(file, onProgress) {
+        const UPLOAD_URL = 'http://localhost:5000/upload';
 
-        const { data, error } = await supabase.storage
-            .from(folder)
-            .upload(filePath, file);
+        const formData = new FormData();
+        formData.append('image', file);
 
-        if (error) {
-            console.error('Upload error:', error);
-            throw error;
-        }
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', UPLOAD_URL);
 
-        const { data: { publicUrl } } = supabase.storage
-            .from(folder)
-            .getPublicUrl(filePath);
+            // Listen for upload progress
+            if (onProgress && xhr.upload) {
+                xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                        const percentComplete = Math.round((event.loaded / event.total) * 100);
+                        onProgress(percentComplete);
+                    }
+                };
+            }
 
-        return publicUrl;
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const res = JSON.parse(xhr.responseText);
+                        resolve({
+                            secure_url: res.secure_url,
+                            public_id: res.public_id
+                        });
+                    } catch (e) {
+                        reject(new Error('Invalid JSON response'));
+                    }
+                } else {
+                    try {
+                        const err = JSON.parse(xhr.responseText);
+                        reject(new Error(`Upload failed: ${err.error || 'Unknown error'}`));
+                    } catch (e) {
+                        reject(new Error(`Upload failed with status: ${xhr.status}`));
+                    }
+                }
+            };
+
+            xhr.onerror = () => {
+                reject(new Error('Cannot reach upload server. Make sure the backend is running:\n  cd server && npm run dev'));
+            };
+
+            xhr.send(formData);
+        });
     }
 }
 
