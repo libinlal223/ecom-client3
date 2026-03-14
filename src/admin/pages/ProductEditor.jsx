@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { db } from '../services/mockDb';
+import { productService } from '../../services/productService';
 import { ArrowLeft, Upload, Plus, X, Minus } from 'lucide-react';
 
 const ProductEditor = () => {
@@ -146,6 +147,8 @@ const ProductEditor = () => {
             } else {
                 await db.createProduct(finalFormData);
             }
+
+            productService.clearCache();
 
             // Sync local state to be strictly Cloudinary URLs just in case UI needs it before navigation
             setFormData(finalFormData);

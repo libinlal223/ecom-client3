@@ -107,12 +107,12 @@ app.post('/upload', (req, res, next) => {
             return res.status(400).json({ error: 'File buffer is empty or missing.' });
         }
 
-        console.log('⏳ Uploading file to Cloudinary...');
+        console.log('⏳ Uploading file to Cloudinary as WebP...');
         let result;
         try {
             result = await uploadToCloudinary(req.file.buffer, {
-                quality: 'auto',
-                fetch_format: 'auto',
+                format: 'webp', // WebP format for low space
+                quality: 'auto', // Smart compression (same visual quality)
             });
         } catch (cloudinaryErr) {
             // 3. Log the exact Cloudinary error to console.

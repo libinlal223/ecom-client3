@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../services/mockDb';
+import { productService } from '../../services/productService';
 import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ProductsList = () => {
@@ -42,6 +43,7 @@ const ProductsList = () => {
         if (!window.confirm('Are you sure you want to delete this product?')) return;
         try {
             await db.deleteProduct(id);
+            productService.clearCache();
             loadData();
         } catch (error) {
             console.error('Failed to delete product', error);

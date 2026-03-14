@@ -2,15 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
-import { supabase } from '../admin/services/mockDb';
 import ProductCard from '../components/ui/ProductCard';
 import './CategoryPage.css';
 import { ChevronDown, AlignJustify, LayoutGrid, Grid3x3, Grid, List, ArrowLeft } from 'lucide-react';
-import defaultCatImg from '../assets/img.png';
-import prd1 from '../assets/prd1.png';
-import prd2 from '../assets/prd2.png';
-import prd3 from '../assets/prd3.png';
-import prd4 from '../assets/prd4.png';
 
 // Cloudinary Image Optimization Helper
 export function getOptimizedImage(url, options = {}) {
@@ -22,18 +16,11 @@ export function getOptimizedImage(url, options = {}) {
     return `${parts[0]}/upload/${transform}/${parts[1]}`;
 }
 
-// Helper for subcategory images
-const getSubcategoryImage = (index) => {
-    const images = [prd1, prd2, prd3, prd4];
-    return images[Math.abs(index) % images.length];
-};
-
 
 const CategoryPage = () => {
     const { categoryId, subcategoryId } = useParams();
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
-    const [allProducts, setAllProducts] = useState([]); // Store all products
     const [category, setCategory] = useState(null);
     const [subcategories, setSubcategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -45,25 +32,16 @@ const CategoryPage = () => {
 
     const fetchProducts = async (pageToFetch) => {
         setLoading(true);
-
-        const productImages = [prd1, prd2, prd3, prd4];
-
-        // Dummy Data implementation
-        setTimeout(() => {
-            const dummyProducts = Array.from({ length: pageSize }).map((_, i) => ({
-                id: `dummy-${pageToFetch}-${i}`,
-                name: `Professional Tool ${i + 1 + ((pageToFetch - 1) * pageSize)}`,
-                price: (Math.random() * 200 + 50).toFixed(2),
-                category: categoryId,
-                images: [productImages[i % productImages.length]],
-                is_featured: Math.random() > 0.8
-            }));
-
-            setProducts(dummyProducts);
-            setTotalCount(120); // Dummy total count
-            setCurrentPage(pageToFetch);
+        try {
+            const res = await productService.getAllProducts(pageToFetch, pageSize, categoryId, subcategoryId);
+            setProducts(res.data || []);
+            setTotalCount(res.total || 0);
+            setCurrentPage(res.page || 1);
+        } catch (error) {
+            console.error("Failed to fetch products:", error);
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
     useEffect(() => {
@@ -72,43 +50,25 @@ const CategoryPage = () => {
             window.scrollTo(0, 0);
 
             setLoading(true);
-            const dummyCategories = [
-                { id: 'protective-equipments', name: 'Protective Equipments' },
-                { id: 'industrial-storage', name: 'Industrial Storage' },
-                { id: 'spill-control', name: 'Spill Control Solutions' },
-                { id: 'road-safety', name: 'Road Safety & Signage' },
-                { id: 'lifting', name: 'Lifting Equipments' },
-                { id: 'measurement', name: 'Precision Measurement Tools' },
-                { id: 'surface-protection', name: 'Surface & Dust Protection Materials' },
-                { id: 'fire-extinguishers', name: 'Fire Extinguishers' },
-                { id: 'wd40', name: 'WD-40 Products' },
-                { id: 'adhesives', name: 'Adhesives & Sealants' },
-                { id: 'tapes', name: 'Tapes & Surface Protection' },
-                { id: 'packaging', name: 'Packaging Tools & Accessories' },
-                { id: 'hand-tools', name: 'Hand Tools' },
-                { id: 'power-tools', name: 'Power Tools' },
-            ];
+            try {
+                // Fetch Categories
+                const cats = await productService.getCategories();
+                const cat = cats.find(c => c.id === categoryId) || { id: categoryId, name: categoryId.replace(/-/g, ' ') };
+                setCategory(cat);
 
-            const cat = dummyCategories.find(c => c.id === categoryId) || { id: categoryId, name: categoryId.replace(/-/g, ' ') };
-            setCategory(cat); // RESTORED state setter
+                // Fetch Subcategories
+                const subs = await productService.getSubcategories(categoryId);
+                setSubcategories(subs || []);
 
-            // Dummy Subcategories to show in UI
-            const dummySubcategories = [
-                { id: 'cutting', name: 'Cutting (Metal)' },
-                { id: 'grinding', name: 'Grinding' },
-                { id: 'cordless', name: 'Cordless Power Tools' },
-                { id: 'drilling', name: 'Drilling & Fastening' },
-                { id: 'heat-gun', name: 'Heat Gun' },
-                { id: 'multi-tool', name: 'Multi Tool' },
-                { id: 'shears', name: 'Shears' },
-            ];
-
-            setSubcategories(dummySubcategories);
-
-            // Fetch optimized paginated products
-            fetchProducts(1);
+                // Fetch optimized paginated products
+                await fetchProducts(1);
+            } catch (error) {
+                console.error("Initialization error:", error);
+                setLoading(false);
+            }
         };
         init();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [categoryId, subcategoryId]);
 
     if (!category && !loading) {

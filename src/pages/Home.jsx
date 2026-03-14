@@ -6,10 +6,6 @@ import ProductCard from '../components/ui/ProductCard';
 import './Home.css';
 import { ChevronLeft, ChevronRight, ArrowRight, Phone, Mail, MapPin, Send } from 'lucide-react';
 import defaultCatImg from '../assets/img.png';
-import prd1 from '../assets/prd1.png';
-import prd2 from '../assets/prd2.png';
-import prd3 from '../assets/prd3.png';
-import prd4 from '../assets/prd4.png';
 import catProtective from '../assets/catogeries/protective equipments.png';
 import catStorage from '../assets/catogeries/industrial storage.jpeg';
 import catSpill from '../assets/catogeries/spill control.jpeg';
@@ -22,12 +18,7 @@ import banner1 from '../assets/banners/1.png';
 import banner2 from '../assets/banners/2.png';
 import banner3 from '../assets/banners/3.png';
 
-/* ── Hero slides ──────────────────────────────────────── */
-const HERO_SLIDES = [
-    { img: banner1, alt: 'Banner 1' },
-    { img: banner2, alt: 'Banner 2' },
-    { img: banner3, alt: 'Banner 3' },
-];
+
 
 
 
@@ -43,18 +34,33 @@ const CAT_IMAGES = {
     'power-tools': catPowerTools,
 };
 
-const getCatImage = (id = '') => CAT_IMAGES[id] || defaultCatImg;
+const getCatImage = (cat) => {
+    if (!cat) return null;
+    if (cat.image_url) return cat.image_url; // Use DB thumbnail first
 
+    const slug = (cat.name || '').toLowerCase().replace(/\s+/g, '-');
+    // Map some known mismatches
+    if (slug.includes('protective')) return catProtective;
+    if (slug.includes('storage')) return catStorage;
+    if (slug.includes('spill')) return catSpill;
+    if (slug.includes('road')) return catRoadSafety;
+    if (slug.includes('lifting')) return catLifting;
+    if (slug.includes('measur')) return catMeasurement;
+    if (slug.includes('fire')) return catFire;
+    if (slug.includes('power')) return catPowerTools;
+    return CAT_IMAGES[slug] || catProtective; // Fallback image
+};
 /* ── Home Component ───────────────────────────────────── */
 const Home = () => {
-    const [activeSlide, setActiveSlide] = useState(0);
+
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [visibleCount, setVisibleCount] = useState(5);
     const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
-    const timerRef = useRef(null);
+
     const categoryGridRef = useRef(null);
+    const brandGridRef = useRef(null);
 
     const scrollCategories = (direction) => {
         if (categoryGridRef.current) {
@@ -66,55 +72,42 @@ const Home = () => {
         }
     };
 
-    // Auto-advance hero
+    const scrollBrands = (direction) => {
+        if (brandGridRef.current) {
+            const scrollAmount = 340; // Approx 2 cards width
+            brandGridRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+
+
+
     useEffect(() => {
-        timerRef.current = setInterval(() => setActiveSlide(s => (s + 1) % HERO_SLIDES.length), 4500);
-        return () => clearInterval(timerRef.current);
+        const fetchInitialData = async () => {
+            setLoading(true);
+            try {
+                // Fetch real categories and products
+                const [cats, prods] = await Promise.all([
+                    productService.getCategories(),
+                    productService.getAllProducts(1, 100) // Fetch top 100 products for home page
+                ]);
+
+                setCategories(cats || []);
+                setProducts(prods.data || []);
+            } catch (error) {
+                console.error("Error fetching home data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInitialData();
     }, []);
 
-    useEffect(() => {
-        setLoading(true);
-        const dummyCategories = [
-            { id: 'protective-equipments', name: 'Protective Equipments' },
-            { id: 'industrial-storage', name: 'Industrial Storage' },
-            { id: 'spill-control', name: 'Spill Control Solutions' },
-            { id: 'road-safety', name: 'Road Safety & Signage' },
-            { id: 'lifting', name: 'Lifting Equipments' },
-            { id: 'measurement', name: 'Precision Measurement Tools' },
-            { id: 'surface-protection', name: 'Surface & Dust Protection Materials' },
-            { id: 'fire-extinguishers', name: 'Fire Extinguishers' },
-            { id: 'wd40', name: 'WD-40 Products' },
-            { id: 'adhesives', name: 'Adhesives & Sealants' },
-            { id: 'tapes', name: 'Tapes & Surface Protection' },
-            { id: 'packaging', name: 'Packaging Tools & Accessories' },
-            { id: 'hand-tools', name: 'Hand Tools' },
-            { id: 'power-tools', name: 'Power Tools' },
-        ];
 
-        const productImages = [prd1, prd2, prd3, prd4];
-
-        const dummyProducts = Array.from({ length: 24 }).map((_, i) => ({
-            id: `dummy-${i}`,
-            name: `Professional Tool ${i + 1}`,
-            price: (Math.random() * 200 + 50).toFixed(2),
-            category: dummyCategories[i % dummyCategories.length].id,
-            images: [productImages[i % productImages.length]],
-            is_featured: Math.random() > 0.8
-        }));
-
-        setCategories(dummyCategories);
-        setProducts(dummyProducts);
-        setLoading(false);
-    }, []);
-
-    const prevSlide = () => {
-        clearInterval(timerRef.current);
-        setActiveSlide(s => (s - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
-    };
-    const nextSlide = () => {
-        clearInterval(timerRef.current);
-        setActiveSlide(s => (s + 1) % HERO_SLIDES.length);
-    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -125,52 +118,22 @@ const Home = () => {
     return (
         <div className="home-page">
 
-            {/* ── Hero + Side Promos ──────────────────────── */}
-            <section className="hero-section">
-                <div className="hero-inner">
-                    {/* Main Banner Slider */}
-                    <div className="hero-slider">
-                        <div
-                            className="slides-track"
-                            style={{ transform: `translateX(-${activeSlide * 100}%)` }}
-                        >
-                            {HERO_SLIDES.map((slide, i) => (
-                                <div
-                                    key={i}
-                                    className="slide"
-                                >
-                                    <div className="slide-banner-wrapper">
-                                        <img
-                                            src={slide.img}
-                                            alt={slide.alt}
-                                            className="banner-image"
-                                            loading={i === 0 ? "eager" : "lazy"}
-                                            fetchpriority={i === 0 ? "high" : "low"}
-                                            decoding="async"
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+
+
+            {/* ── Top Banner Section ─────────────────────────────── */}
+            <section className="hero-banner-section">
+                <div className="container">
+                    <div className="hero-banner-layout">
+                        <div className="main-banner">
+                            <img src={banner1} alt="Ramadan Promo Banner" loading="eager" />
                         </div>
-
-                        {/* Arrows */}
-                        <button className="slider-arrow left" onClick={prevSlide} aria-label="Previous">
-                            <ChevronLeft size={20} />
-                        </button>
-                        <button className="slider-arrow right" onClick={nextSlide} aria-label="Next">
-                            <ChevronRight size={20} />
-                        </button>
-
-                        {/* Dots */}
-                        <div className="slider-dots">
-                            {HERO_SLIDES.map((_, i) => (
-                                <button
-                                    key={i}
-                                    className={`dot ${activeSlide === i ? 'active' : ''}`}
-                                    onClick={() => setActiveSlide(i)}
-                                    aria-label={`Slide ${i + 1}`}
-                                />
-                            ))}
+                        <div className="side-banners">
+                            <div className="side-banner">
+                                <img src={banner2} alt="Cabinet Hardware Promo" loading="eager" />
+                            </div>
+                            <div className="side-banner">
+                                <img src={banner3} alt="Hettich Promo Banner" loading="eager" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -179,37 +142,52 @@ const Home = () => {
             {/* ── Top Categories Grid ─────────────────────── */}
             <section className="top-categories-section">
                 <div className="container">
-                    <h2 className="section-title">Top Categories</h2>
                     {loading ? (
                         <div className="spinner" />
                     ) : (
-                        <div className="top-categories-wrapper">
-                            <button className="cat-nav-btn left" onClick={() => scrollCategories('left')} aria-label="Previous categories">
-                                <ChevronLeft size={24} color="#555" />
-                            </button>
-
-                            <div className="top-categories-grid" ref={categoryGridRef}>
-                                {categories.map((cat) => (
-                                    <Link key={cat.id} to={`/category/${cat.id}`} className="top-cat-card">
-                                        <div className="top-cat-image">
-                                            <img
-                                                src={getCatImage(cat.id)}
-                                                alt={cat.name}
-                                                loading="lazy"
-                                                decoding="async"
-                                                fetchpriority="low"
-                                            />
-                                        </div>
-                                        <span className="top-cat-name">{cat.name}</span>
-                                    </Link>
-                                ))}
+                        <>
+                            <h2 className="top-categories-title">Top Categories</h2>
+                            <div className="hero-categories-grid">
+                            {categories.slice(0, 16).map((cat) => (
+                                <Link key={cat.id} to={`/category/${cat.id}`} className="hero-cat-card">
+                                    <div className="hero-cat-image">
+                                        <img
+                                            src={getCatImage(cat)}
+                                            alt={cat.name}
+                                            loading="eager"
+                                            decoding="async"
+                                        />
+                                    </div>
+                                    <span className="hero-cat-name">{cat.name}</span>
+                                </Link>
+                            ))}
                             </div>
-
-                            <button className="cat-nav-btn right" onClick={() => scrollCategories('right')} aria-label="Next categories">
-                                <ChevronRight size={24} color="#555" />
-                            </button>
-                        </div>
+                        </>
                     )}
+                </div>
+            </section>
+
+            {/* ── Shop By Brands Section ─────────────────────── */}
+            <section className="brands-section">
+                <div className="container">
+                    <h2 className="brands-title">Shop By Brands</h2>
+                    <div className="brands-marquee-container">
+                        <div className="brands-marquee-track">
+                            {[
+                                "Brennenstuhl", "Makita", "Euromatic", "KC POWER", 
+                                "STONY", "AR BLUE CLEAN", "KITO", "Stanley",
+                                "DeWalt", "Milwaukee", "Hitachi", "Bosh",
+                                // Duplicated for seamless loop
+                                "Brennenstuhl", "Makita", "Euromatic", "KC POWER", 
+                                "STONY", "AR BLUE CLEAN", "KITO", "Stanley",
+                                "DeWalt", "Milwaukee", "Hitachi", "Bosh" 
+                            ].map((brand, i) => (
+                                <div key={i} className="brand-card">
+                                    <span className="brand-text">{brand}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -217,7 +195,10 @@ const Home = () => {
             {!loading && (
                 <>
                     {categories.slice(0, visibleCount).map((category, index) => {
-                        const catProducts = products.filter(p => p.category === category.id).slice(0, 6);
+                        // Match products by direct category_id OR via subcategory's parent category
+                        const catProducts = products.filter(p =>
+                            p.category === category.id
+                        ).slice(0, 6);
                         if (catProducts.length === 0) return null;
                         return (
                             <React.Fragment key={category.id}>
@@ -253,17 +234,17 @@ const Home = () => {
                                         <div className="custom-banner-grid">
                                             {/* Top Row */}
                                             <div className="banner-placeholder banner-wide">
-                                                <span>Image Placeholder 1 (Large)</span>
+                                                <img src={banner1} alt="Banner 1" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             </div>
                                             <div className="banner-placeholder banner-narrow">
-                                                <span>Image Placeholder 2 (Small)</span>
+                                                <img src={banner2} alt="Banner 2" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             </div>
                                             {/* Bottom Row */}
                                             <div className="banner-placeholder banner-narrow">
-                                                <span>Image Placeholder 3 (Small)</span>
+                                                <img src={banner3} alt="Banner 3" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             </div>
                                             <div className="banner-placeholder banner-wide">
-                                                <span>Image Placeholder 4 (Large)</span>
+                                                <img src={banner1} alt="Banner 4" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             </div>
                                         </div>
                                     </section>
@@ -292,45 +273,7 @@ const Home = () => {
                 </>
             )}
 
-            {/* ── Contact Section ─────────────────────────── */}
-            <section id="contact" className="contact-section">
-                <div className="container contact-inner">
-                    <div className="contact-info">
-                        <h2>Get In Touch</h2>
-                        <p className="contact-intro">We're here to help with your industrial tool needs.</p>
-                        <div className="info-items">
-                            <div className="info-item">
-                                <MapPin size={20} color="var(--accent)" />
-                                <div><strong>Address</strong><p>123 Industrial Ave, Dubai, UAE</p></div>
-                            </div>
-                            <div className="info-item">
-                                <Phone size={20} color="var(--accent)" />
-                                <div><strong>Phone</strong><p>+971-4-295-7557</p></div>
-                            </div>
-                            <div className="info-item">
-                                <Mail size={20} color="var(--accent)" />
-                                <div><strong>Email</strong><p>info@suntric.com</p></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="contact-form-wrapper">
-                        <h2>Send a Message</h2>
-                        <form className="contact-form" onSubmit={handleSubmit}>
-                            <input type="text" placeholder="Your Name" value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                            <input type="email" placeholder="Your Email" value={formData.email}
-                                onChange={e => setFormData({ ...formData, email: e.target.value })} required />
-                            <input type="text" placeholder="Subject" value={formData.subject}
-                                onChange={e => setFormData({ ...formData, subject: e.target.value })} required />
-                            <textarea rows="5" placeholder="Your Message" value={formData.message}
-                                onChange={e => setFormData({ ...formData, message: e.target.value })} required />
-                            <button type="submit" className="btn btn-primary">
-                                <Send size={16} /> Send Message
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </section>
+
         </div>
     );
 };

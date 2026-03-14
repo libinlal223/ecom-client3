@@ -3,10 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productService } from '../services/productService';
 import { Truck, ShieldCheck, ArrowLeft, Plus, Minus, Heart, Share2, ShoppingCart } from 'lucide-react';
 import './ProductDetail.css';
-import prd1 from '../assets/prd1.png';
-import prd2 from '../assets/prd2.png';
-import prd3 from '../assets/prd3.png';
-import prd4 from '../assets/prd4.png';
 
 export function getOptimizedImage(url, options = {}) {
     if (!url || typeof url !== 'string') return url;
@@ -28,32 +24,14 @@ const ProductDetail = () => {
     useEffect(() => {
         const fetchProduct = async () => {
             setLoading(true);
-            setTimeout(() => {
-                // Generate a rich dummy product for preview
-                const dummyProduct = {
-                    id: id,
-                    name: "Professional High-Performance Tool",
-                    description: "Built for ultimate performance and reliability. Featuring advanced ergonomic grips, this robust tool ensures precision engineering in every use case. Tested against industrial standard benchmarks for long-lasting endurance.",
-                    price: "199.99",
-                    category: "power-tools",
-                    features: [
-                        "Durable robust aluminum casing",
-                        "High-torque motor for extreme precision",
-                        "Anti-slip ergonomic handle",
-                        "12-month standard warranty included"
-                    ],
-                    images: [
-                        prd1,
-                        prd2,
-                        prd3,
-                        prd4
-                    ],
-                    is_featured: true
-                };
-
-                setProduct(dummyProduct);
+            try {
+                const fetchedProduct = await productService.getProductById(id);
+                setProduct(fetchedProduct);
+            } catch (error) {
+                console.error("Failed to fetch product:", error);
+            } finally {
                 setLoading(false);
-            }, 600);
+            }
         };
         fetchProduct();
     }, [id]);
@@ -95,7 +73,7 @@ const ProductDetail = () => {
                                     alt={product.name}
                                     className="main-preview-img"
                                     loading="eager"
-                                    fetchpriority="high"
+                                    fetchPriority="high"
                                     decoding="async"
                                 />
                             )}
@@ -112,7 +90,7 @@ const ProductDetail = () => {
                                         src={getOptimizedImage(img, { width: 400 })}
                                         alt={`${product.name} ${index + 1}`}
                                         loading="lazy"
-                                        fetchpriority="low"
+                                        fetchPriority="low"
                                         decoding="async"
                                     />
                                 </button>

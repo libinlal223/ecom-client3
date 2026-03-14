@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
 import CategoryPage from './pages/CategoryPage';
 import Contact from './pages/Contact';
+import SearchPage from './pages/SearchPage';
 
 // Admin Imports
 import AdminLayout from './admin/AdminLayout';
@@ -51,6 +52,7 @@ function App() {
         <Route path="/category/:categoryId" element={<PublicLayout><CategoryPage /></PublicLayout>} />
         <Route path="/category/:categoryId/:subcategoryId" element={<PublicLayout><CategoryPage /></PublicLayout>} />
         <Route path="/product/:id" element={<PublicLayout><ProductDetail /></PublicLayout>} />
+        <Route path="/search" element={<PublicLayout><SearchPage /></PublicLayout>} />
         <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
 
         {/* 404 */}

@@ -24,7 +24,7 @@ const ProductCard = ({ product }) => {
                         alt={product.name}
                         loading="lazy"
                         decoding="async"
-                        fetchpriority="low"
+                        fetchPriority="low"
                     />
                     : <div className="pc-no-image">No Image</div>
                 }

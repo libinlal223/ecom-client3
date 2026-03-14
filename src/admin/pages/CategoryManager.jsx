@@ -1,12 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../services/mockDb';
+import { productService } from '../../services/productService';
+import { Upload, X } from 'lucide-react';
 
 const CategoryManager = () => {
     const [categories, setCategories] = useState([]);
     const [subcategories, setSubcategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [formData, setFormData] = useState({ name: '', category_id: '' });
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef(null);
 
     // Simple state to toggle between 'categories' and 'subcategories' view
     const [viewMode, setViewMode] = useState('categories');
@@ -26,24 +32,53 @@ const CategoryManager = () => {
         setLoading(false);
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            const url = URL.createObjectURL(file);
+            setImagePreview(url);
+        }
+    };
+
+    const clearImage = () => {
+        setImageFile(null);
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     const handleCreate = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setUploading(true);
         try {
+            let uploadedUrl = null;
+            if (viewMode === 'categories' && imageFile) {
+                const imgRes = await db.uploadImage(imageFile);
+                // Depending on the uploadImage implementation returning the URL string directly or an object
+                uploadedUrl = imgRes.secure_url || imgRes;
+            }
+
             if (viewMode === 'categories') {
-                await db.createCategory({ name: formData.name });
+                await db.createCategory({ name: formData.name, image_url: uploadedUrl });
             } else {
                 await db.createSubcategory({
                     name: formData.name,
-                    category_id: formData.category_id
+                    category_id: formData.category_id,
+                    image_url: uploadedUrl
                 });
             }
+            productService.clearCache();
             await loadData();
             setFormData({ name: '', category_id: '' });
+            clearImage();
         } catch (error) {
             console.error('Failed to create', error);
+            alert(`Error creating: ${error.message}`);
         } finally {
             setLoading(false);
+            setUploading(false);
         }
     };
 
@@ -51,6 +86,7 @@ const CategoryManager = () => {
         if (!window.confirm('Delete this category? Products in this category will be orphaned.')) return;
         setLoading(true);
         await db.deleteCategory(id);
+        productService.clearCache();
         await loadData();
         setLoading(false);
     };
@@ -59,6 +95,7 @@ const CategoryManager = () => {
         if (!window.confirm('Delete this subcategory?')) return;
         setLoading(true);
         await db.deleteSubcategory(id);
+        productService.clearCache();
         await loadData();
         setLoading(false);
     };
@@ -119,8 +156,40 @@ const CategoryManager = () => {
                             required
                         />
                     </div>
-                    <button type="submit" className="btn btn-primary" style={{ padding: '0.625rem 1.5rem' }}>
-                        Create
+                    {viewMode === 'categories' && (
+                        <div style={{ flex: 1, position: 'relative' }}>
+                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.5rem' }}>Thumbnail (Optional)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                ref={fileInputRef}
+                                style={{ display: 'none' }}
+                            />
+                            {!imagePreview ? (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    style={{ width: '100%', padding: '0.55rem', borderRadius: '0.375rem', border: '1px dashed #D1D5DB', background: '#F9FAFB', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#6B7280' }}
+                                >
+                                    <Upload size={16} /> Upload Image
+                                </button>
+                            ) : (
+                                <div style={{ position: 'relative', width: '100%', height: '42px', borderRadius: '0.375rem', overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+                                    <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <button
+                                        type="button"
+                                        onClick={clearImage}
+                                        style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', padding: '2px' }}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <button type="submit" disabled={uploading || loading} className="btn btn-primary" style={{ padding: '0.625rem 1.5rem', whiteSpace: 'nowrap' }}>
+                        {uploading ? 'Uploading...' : 'Create'}
                     </button>
                 </form>
             </div>
@@ -142,7 +211,20 @@ const CategoryManager = () => {
                     <tbody style={{ divideY: '1px solid #E5E7EB' }}>
                         {(viewMode === 'categories' ? categories : subcategories).map(item => (
                             <tr key={item.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
-                                <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{item.name}</td>
+                                <td style={{ padding: '1rem 1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        {viewMode === 'categories' && (
+                                            <div style={{ width: '32px', height: '32px', borderRadius: '4px', background: '#F3F4F6', overflow: 'hidden' }}>
+                                                {item.image_url ? (
+                                                    <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', fontSize: '0.65rem' }}>Img</div>
+                                                )}
+                                            </div>
+                                        )}
+                                        <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#111827' }}>{item.name}</span>
+                                    </div>
+                                </td>
                                 {viewMode === 'subcategories' && (
                                     <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: '#6B7280' }}>
                                         {categories.find(c => c.id === item.category_id)?.name || item.category_id}
