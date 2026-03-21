@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import './Navbar.css';
-import { Search, Phone, Heart, User, Menu, X, ChevronDown, ChevronRight, ShoppingCart, LayoutGrid } from 'lucide-react';
+import { Search, Phone, Heart, UserRound, Menu, X, ChevronDown, ChevronRight, ShoppingBag, LayoutGrid, Mail } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
 
@@ -52,13 +52,10 @@ const Navbar = () => {
             <div className="header-notice-bar">
                 <div className="container notice-bar-inner">
                     <div className="notice-left">
-                        Call Us: +971 4 295 7557
+                        <span className="notice-item"><Phone size={14} style={{ marginRight: '6px' }}/> 24/7 Support: 1-800-888-9999</span>
                     </div>
                     <div className="notice-right">
-                        <div className="notice-item highlight-box">Inquiry : info@starlinks.com</div>
-                        <Link to="/admin/login" className="notice-action-btn">
-                            <User size={16} /> Login
-                        </Link>
+                        <span className="notice-item" style={{ textTransform: 'none' }}><Mail size={14} style={{ marginRight: '6px' }}/> info@starlinks.com</span>
                     </div>
                 </div>
             </div>
@@ -68,47 +65,50 @@ const Navbar = () => {
                 <div className="container header-main-inner">
                     {/* Logo */}
                     <Link to="/" className="header-logo">
-                        <div className="logo-icon">S</div>
+                        <img src="/images/logo.png" alt="Logo" className="logo-image" />
                         <span className="logo-text">Star Links</span>
                     </Link>
 
-                    {/* Search Bar */}
-                    <div className="header-search-container">
-                        <form className="header-search" onSubmit={handleSearch}>
+                    {/* Search Bar (Moved Up to Main Header) */}
+                    <div className="header-search-container digitaz-search-container">
+                        <form className="header-search digitaz-search main-header-search" onSubmit={handleSearch}>
                             <input
                                 type="text"
-                                placeholder="Search product"
+                                placeholder="Search for Products..."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                             />
-                            <button type="submit" className="search-btn" aria-label="Search">
+                            <button type="submit" className="search-btn digitaz-search-btn" aria-label="Search">
                                 <Search size={18} />
                             </button>
                         </form>
                     </div>
 
                     {/* Right Icons */}
-                    <div className="header-icons">
-                        <a href="tel:+971429577557" className="header-action-item call-action">
-                            <Phone size={20} className="action-icon" />
-                            <div className="action-text">
-                                <span className="action-label">Call Us</span>
-                                <span className="action-value">+971 4 295 7557</span>
+                    <div className="header-icons digitaz-icons">
+                        <a href="tel:+971429577557" className="header-action-item call-action farmart-contact digitaz-contact">
+                            <Phone size={24} strokeWidth={1.5} className="action-icon" />
+                            <div className="action-text right-align">
+                                <span className="action-label" style={{ fontWeight: '600' }}>24/7 Support</span>
+                                <span className="action-value digitaz-red">1-800-888-9999</span>
                             </div>
                         </a>
 
-                        <button className="header-action-item" aria-label="Wishlist">
-                            <div className="icon-with-badge">
-                                <Heart size={20} className="action-icon" />
-                                <span className="badge">0</span>
-                            </div>
-                            <span className="action-label">Wishlist</span>
+                        <button className="header-action-item icon-only digitaz-icon" aria-label="Wishlist">
+                            <Heart size={24} strokeWidth={1.5} className="action-icon" />
                         </button>
 
-                        <button className="header-action-item" aria-label="Cart">
+                        <Link to="/admin/login" className="header-action-item icon-only digitaz-icon">
                             <div className="icon-with-badge">
-                                <ShoppingCart size={22} className="action-icon" />
-                                <span className="badge">0</span>
+                                <UserRound size={24} strokeWidth={1.5} className="action-icon" />
+                                <span className="badge badge-red">0</span>
+                            </div>
+                        </Link>
+
+                        <button className="header-action-item farmart-cart digitaz-icon" aria-label="Cart">
+                            <div className="icon-with-badge">
+                                <ShoppingBag size={24} strokeWidth={1.5} className="action-icon" />
+                                <span className="badge badge-red">0</span>
                             </div>
                         </button>
 
@@ -128,8 +128,8 @@ const Navbar = () => {
                         onMouseEnter={() => setCatOpen(true)}
                         onMouseLeave={() => { setCatOpen(false); setHoveredCat(null); }}
                     >
-                        <LayoutGrid size={16} />
-                        Browse All Categories
+                        <Menu size={18} style={{ marginRight: '8px' }} />
+                        SHOP BY CATEGORY
                         {catOpen && (
                             <div className="categories-dropdown">
                                 {categories.map(cat => {
@@ -183,16 +183,14 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    {/* Fixed Nav Links with Mega Menu */}
-                    <div className="nav-links-scroll">
+                    {/* Navigation Links (Moved down to Bottom Bar) */}
+                    <div className="nav-links-scroll bottom-nav-links">
                         {[
                             { label: 'Home',               to: '/' },
-                            { label: 'Safety',             to: '/search?q=safety' },
-                            { label: 'Building Materials', to: '/search?q=building+materials' },
-                            { label: 'Tools',              to: '/search?q=tools' },
-                            { label: 'PPE',                to: '/search?q=ppe' },
-                            { label: 'Lifting',            to: '/search?q=lifting' },
-                            { label: 'HDPE',               to: '/search?q=hdpe' },
+                            { label: 'Shop',               to: '/search?q=shop' },
+                            { label: 'Pages',              to: '/search?q=pages' },
+                            { label: 'Blog',               to: '/search?q=blog' },
+                            { label: 'Contact Us',         to: '/contact' },
                         ].map(({ label, to }) => (
                             <div
                                 key={label}
@@ -200,7 +198,7 @@ const Navbar = () => {
                                 onMouseEnter={() => setHoveredTopCat(label)}
                                 onMouseLeave={() => setHoveredTopCat(null)}
                             >
-                                <Link to={to} className="nav-cat-link">
+                                <Link to={to} className="nav-cat-link bottom-theme-link" style={{ textTransform: 'none' }}>
                                     {label} <ChevronDown size={13} className="nav-chevron" />
                                 </Link>
 
@@ -237,6 +235,8 @@ const Navbar = () => {
                             </div>
                         ))}
                     </div>
+
+
                 </div>
             </nav>
 

@@ -116,39 +116,22 @@ const Home = () => {
     };
 
     return (
-        <div className="home-page">
-
-
-
+        <div className="home-promo-page">
             {/* ── Top Banner Section ─────────────────────────────── */}
-            <section className="hero-banner-section">
-                <div className="container">
-                    <div className="hero-banner-layout">
-                        <div className="main-banner">
-                            <img src={banner1} alt="Ramadan Promo Banner" loading="eager" />
-                        </div>
-                        <div className="side-banners">
-                            <div className="side-banner">
-                                <img src={banner2} alt="Cabinet Hardware Promo" loading="eager" />
-                            </div>
-                            <div className="side-banner">
-                                <img src={banner3} alt="Hettich Promo Banner" loading="eager" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <section className="promo-top-banner">
+                <img src="/images/banner.jpeg" alt="Promo Banner" loading="eager" />
             </section>
 
-            {/* ── Top Categories Grid ─────────────────────── */}
-            <section className="top-categories-section">
+            {/* ── 3x3 Categories Grid ────────────────────────────── */}
+            <section className="promo-categories-section">
                 <div className="container">
                     {loading ? (
                         <div className="spinner" />
                     ) : (
                         <>
-                            <h2 className="top-categories-title">Top Categories</h2>
-                            <div className="hero-categories-grid">
-                            {categories.slice(0, 16).map((cat) => (
+                            <h2 className="promo-categories-title">Top Categories</h2>
+                            <div className="promo-categories-grid">
+                            {categories.slice(0, 32).map((cat) => (
                                 <Link key={cat.id} to={`/category/${cat.id}`} className="hero-cat-card">
                                     <div className="hero-cat-image">
                                         <img
@@ -167,22 +150,14 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* ── Shop By Brands Section ─────────────────────── */}
+            {/* ── Shop By Brands Section ──────────────────────────── */}
             <section className="brands-section">
                 <div className="container">
                     <h2 className="brands-title">Shop By Brands</h2>
                     <div className="brands-marquee-container">
                         <div className="brands-marquee-track">
-                            {[
-                                "Brennenstuhl", "Makita", "Euromatic", "KC POWER", 
-                                "STONY", "AR BLUE CLEAN", "KITO", "Stanley",
-                                "DeWalt", "Milwaukee", "Hitachi", "Bosh",
-                                // Duplicated for seamless loop
-                                "Brennenstuhl", "Makita", "Euromatic", "KC POWER", 
-                                "STONY", "AR BLUE CLEAN", "KITO", "Stanley",
-                                "DeWalt", "Milwaukee", "Hitachi", "Bosh" 
-                            ].map((brand, i) => (
-                                <div key={i} className="brand-card">
+                            {['STANLEY', 'DEWALT', 'MILWAUKEE', 'HITACHI', 'BOSH', 'BRENNENSTUHL', 'MAKITA', 'EUROMATE', 'STANLEY', 'DEWALT', 'MILWAUKEE', 'HITACHI', 'BOSH', 'BRENNENSTUHL', 'MAKITA', 'EUROMATE'].map((brand, index) => (
+                                <div key={index} className="brand-card">
                                     <span className="brand-text">{brand}</span>
                                 </div>
                             ))}
@@ -191,89 +166,95 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* ── Products by Category Rows ───────────────── */}
-            {!loading && (
-                <>
-                    {categories.slice(0, visibleCount).map((category, index) => {
-                        // Match products by direct category_id OR via subcategory's parent category
-                        const catProducts = products.filter(p =>
-                            p.category === category.id
-                        ).slice(0, 6);
-                        if (catProducts.length === 0) return null;
-                        return (
-                            <React.Fragment key={category.id}>
-                                <section className="product-row-section">
-                                    <div className="container">
-                                        <div className="row-header">
-                                            <h2 className="section-title">{category.name}</h2>
-                                            <Link to={`/category/${category.id}`} className="view-all-link">
-                                                View All <ArrowRight size={14} />
-                                            </Link>
-                                        </div>
-                                        <div className="products-row-scroll-wrapper">
-                                            <div className="products-row-scroll">
-                                                {catProducts.map(product => (
-                                                    <div key={product.id} className="product-col">
-                                                        <ProductCard product={product} />
-                                                    </div>
-                                                ))}
-                                                <div className="product-col">
-                                                    <Link to={`/category/${category.id}`} className="view-all-card">
-                                                        <span>View All</span>
-                                                        <ArrowRight size={20} />
-                                                    </Link>
+            {/* ── Custom Banner Grid ─────────────────────────────────── */}
+            <section className="custom-banner-section">
+                <div className="container">
+                    <div className="custom-banner-grid">
+                        <Link to="/category/1" className="banner-placeholder banner-wide">
+                            <img src={banner1} alt="Power Tools" loading="lazy" />
+                        </Link>
+                        <Link to="/category/2" className="banner-placeholder banner-narrow">
+                            <img src={banner2} alt="Safety Equipment" loading="lazy" />
+                        </Link>
+                        <Link to="/category/3" className="banner-placeholder banner-narrow">
+                            <img src={banner3} alt="Workplace Safety Solutions" loading="lazy" />
+                        </Link>
+                        <Link to="/category/1" className="banner-placeholder banner-wide">
+                            <img src={banner1} alt="Power Tools" loading="lazy" />
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Category Product Rows & Promo Footer ──────────────── */}
+            {categories.slice(0, 5)
+                .filter(category => {
+                    const categoryProducts = products.filter(p => p.category_id === category.id || p.category === category.id).slice(0, 10);
+                    return categoryProducts.length > 0;
+                })
+                .map((category, index, filteredArray) => {
+                    const categoryProducts = products.filter(p => p.category_id === category.id || p.category === category.id).slice(0, 10);
+
+                    return (
+                        <React.Fragment key={category.id}>
+                            <section className="product-row-section">
+                                <div className="container">
+                                    <div className="row-header">
+                                        <h3 className="section-title" style={{ display: 'flex', alignItems: 'center', fontSize: '1.25rem', color: '#1A2332' }}>
+                                            <span style={{ display: 'inline-block', width: '4px', height: '24px', background: '#3b82f6', marginRight: '10px', borderRadius: '2px' }}></span>
+                                            {category.name}
+                                        </h3>
+                                        <Link to={`/category/${category.id}`} className="view-all-link">
+                                            View All <ArrowRight size={16} />
+                                        </Link>
+                                    </div>
+                                    <div className="products-row-scroll-wrapper">
+                                        <div className="products-row-scroll">
+                                            {categoryProducts.map(product => (
+                                                <div key={product.id} className="product-col">
+                                                    <ProductCard product={product} />
                                                 </div>
+                                            ))}
+                                            <div className="product-col">
+                                                <Link to={`/category/${category.id}`} style={{ textDecoration: 'none' }}>
+                                                    <div className="view-all-card">
+                                                        <span>View All</span>
+                                                        <ArrowRight size={24} />
+                                                    </div>
+                                                </Link>
                                             </div>
                                         </div>
                                     </div>
-                                </section>
+                                </div>
+                            </section>
 
-                                {/* Insert layout after 2nd category (index 1) */}
-                                {index === 1 && (
-                                    <section className="custom-banner-section container">
-                                        <div className="custom-banner-grid">
-                                            {/* Top Row */}
-                                            <div className="banner-placeholder banner-wide">
-                                                <img src={banner1} alt="Banner 1" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            </div>
-                                            <div className="banner-placeholder banner-narrow">
-                                                <img src={banner2} alt="Banner 2" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            </div>
-                                            {/* Bottom Row */}
-                                            <div className="banner-placeholder banner-narrow">
-                                                <img src={banner3} alt="Banner 3" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            </div>
-                                            <div className="banner-placeholder banner-wide">
-                                                <img src={banner1} alt="Banner 4" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {/* Show Promo Footer after the 2nd product row (index === 1) */}
+                            {index === 1 && (
+                                <section className="promo-footer" style={{ marginTop: 0 }}>
+                                    <div className="promo-footer-content">
+                                        <div className="promo-left-side">
+                                            <div className="promo-order-btn">ORDER NOW</div>
+                                            <div className="promo-contact-info">
+                                                <Phone size={24} color="#111" />
+                                                <div>
+                                                    <strong>+ 12 345 67890</strong>
+                                                    <p>www.websitename.com</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </section>
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
-
-                    <div className="container" style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0 3rem' }}>
-                        {visibleCount < categories.length ? (
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => setVisibleCount(prev => prev + 5)}
-                            >
-                                Show More Categories
-                            </button>
-                        ) : categories.length > 5 ? (
-                            <button
-                                className="btn btn-secondary"
-                                onClick={() => setVisibleCount(5)}
-                            >
-                                Show Less
-                            </button>
-                        ) : null}
-                    </div>
-                </>
-            )}
-
-
+                                        <div className="promo-address-info">
+                                            <div style={{ textAlign: 'right' }}>
+                                                <strong>123 Lorem Ipsum Supermarket</strong>
+                                                <p>5th floor, 12 lorem ipsum city</p>
+                                            </div>
+                                            <MapPin size={32} color="#111" />
+                                        </div>
+                                    </div>
+                                </section>
+                            )}
+                        </React.Fragment>
+                    );
+                })}
         </div>
     );
 };
